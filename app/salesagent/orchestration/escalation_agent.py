@@ -228,6 +228,7 @@ class EscalationPlanner:
                                    usage=costs.Usage(input_tokens=costs.estimate_tokens(SYSTEM_PROMPT + user)),
                                    latency_ms=ms, status="error")
                 log.warning("escalation agent failed for %s: %s", attempt_id, exc)
+                sp.set_attribute("plan.source", "rules_error")
                 return PlanResult(rules_plan(packet), "rules", "MODEL_ERROR", findings)
             ms = int((time.perf_counter() - started) * 1000)
             if not usage.input_tokens:  # provider did not report usage: bill the estimate, never zero
