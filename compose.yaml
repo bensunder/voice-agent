@@ -1,0 +1,113 @@
+# AI Sales Agent - production stack for srv1507394
+#
+#   ./deploy.sh            # first deploy and every update
+#
+# Only loopback ports are published; Caddy terminates TLS and proxies:
+#   sales-api.whyaidata.com -> 127.0.0.1:8310 (tool-api)
+#   cockpit.whyaidata.com   -> 127.0.0.1:8311 (cockpit)
+# Postgres is reachable only on the internal network.
+
+name: ai-sales-agent
+
+x-app: &app
+  build: ./app
+  image: ai-sales-agent:latest
+  env_file: .env
+  restart: unless-stopped
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  networks: [backend, egress]
+  depends_on:
+    db:
+      condition: service_healthy
+  secrets:
+    - database_url
+    - tool_api_key
+    - call_token_secret
+    - cockpit_password
+    - azure_client_secret
+    - power_automate_webhook_url
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: salesagent
+      POSTGRES_USER: salesagent
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U salesagent -d salesagent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    deploy:
+      resources:
+        limits: { memory: 512m }
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  tool-api:
+    <<: *app
+    command: ["uvicorn", "salesagent.api.tool_api:app", "--host", "0.0.0.0", "--port", "8000",
+              "--proxy-headers", "--forwarded-allow-ips", "*", "--workers", "2"]
+    ports: ["127.0.0.1:8310:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { memory: 384m }
+
+  cockpit:
+    <<: *app
+    command: ["uvicorn", "salesagent.api.cockpit:app", "--host", "0.0.0.0", "--port", "8000",
+              "--proxy-headers", "--forwarded-allow-ips", "*"]
+    ports: ["127.0.0.1:8311:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits: { memory: 256m }
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "salesagent.worker"]
+    deploy:
+      resources:
+        limits: { memory: 256m }
+
+networks:
+  backend:
+    internal: true   # no route to the internet; db lives only here
+  egress: {}         # apps reach Azure / Graph / Dataverse / Power Automate
+
+volumes:
+  pgdata: {}
+
+secrets:
+  db_password:                { file: ./secrets/db_password }
+  database_url:               { file: ./secrets/database_url }
+  tool_api_key:               { file: ./secrets/tool_api_key }
+  call_token_secret:          { file: ./secrets/call_token_secret }
+  cockpit_password:           { file: ./secrets/cockpit_password }
+  azure_client_secret:        { file: ./secrets/azure_client_secret }
+  power_automate_webhook_url: { file: ./secrets/power_automate_webhook_url }

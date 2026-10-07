@@ -1,0 +1,33 @@
+# >>> ai-sales-agent >>>
+sales-api.whyaidata.com {
+	encode gzip
+	request_body {
+		max_size 64KB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	# Only the agent tool surface and its OpenAPI spec are public.
+	@allowed path /tools/* /agent/openapi.json /healthz
+	handle @allowed {
+		reverse_proxy 127.0.0.1:8310
+	}
+	handle {
+		respond 404
+	}
+}
+
+cockpit.whyaidata.com {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:8311 {
+		flush_interval -1   # stream Server-Sent Events immediately
+	}
+}
+# <<< ai-sales-agent <<<

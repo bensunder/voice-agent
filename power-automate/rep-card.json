@@ -1,0 +1,132 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.4",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "@{triggerBody()?['title']}",
+      "weight": "Bolder",
+      "size": "Medium",
+      "color": "Accent",
+      "wrap": true
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "@{triggerBody()?['score']}",
+              "size": "ExtraLarge",
+              "weight": "Bolder",
+              "horizontalAlignment": "Center"
+            },
+            {
+              "type": "TextBlock",
+              "text": "@{triggerBody()?['band']}",
+              "weight": "Bolder",
+              "color": "Attention",
+              "horizontalAlignment": "Center",
+              "spacing": "None"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "@{triggerBody()?['company']}",
+              "weight": "Bolder",
+              "size": "Medium",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "@{triggerBody()?['contact']} · @{triggerBody()?['phone']}",
+              "isSubtle": true,
+              "spacing": "None",
+              "wrap": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "FactSet",
+      "facts": [
+        {
+          "title": "Mobile lines",
+          "value": "@{triggerBody()?['lines']}"
+        },
+        {
+          "title": "Current carrier",
+          "value": "@{triggerBody()?['carrier']}"
+        },
+        {
+          "title": "Contract renewal",
+          "value": "@{triggerBody()?['renewal']}"
+        },
+        {
+          "title": "Decision role",
+          "value": "@{triggerBody()?['role']}"
+        },
+        {
+          "title": "Pain points",
+          "value": "@{triggerBody()?['pain_points']}"
+        },
+        {
+          "title": "Estimated opportunity",
+          "value": "@{triggerBody()?['estimated_value']}"
+        },
+        {
+          "title": "Meeting",
+          "value": "@{triggerBody()?['meeting']}"
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "Call summary",
+      "weight": "Bolder",
+      "spacing": "Medium"
+    },
+    {
+      "type": "TextBlock",
+      "text": "@{triggerBody()?['summary']}",
+      "wrap": true,
+      "spacing": "Small"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Recommended next action: @{triggerBody()?['next_action']}",
+      "wrap": true,
+      "weight": "Bolder",
+      "color": "Good"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Score drivers: @{triggerBody()?['reason_codes']}",
+      "wrap": true,
+      "isSubtle": true,
+      "size": "Small"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.OpenUrl",
+      "title": "Open call briefing",
+      "url": "@{triggerBody()?['briefing_url']}"
+    },
+    {
+      "type": "Action.OpenUrl",
+      "title": "Join Teams meeting",
+      "url": "@{if(empty(triggerBody()?['join_url']), triggerBody()?['briefing_url'], triggerBody()?['join_url'])}"
+    }
+  ]
+}

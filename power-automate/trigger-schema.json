@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "rep_upn": {
+      "type": "string"
+    },
+    "contact": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "score": {
+      "type": "integer"
+    },
+    "band": {
+      "type": "string"
+    },
+    "lines": {
+      "type": "integer"
+    },
+    "carrier": {
+      "type": "string"
+    },
+    "renewal": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "pain_points": {
+      "type": "string"
+    },
+    "estimated_value": {
+      "type": "string"
+    },
+    "meeting": {
+      "type": "string"
+    },
+    "join_url": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "next_action": {
+      "type": "string"
+    },
+    "reason_codes": {
+      "type": "string"
+    },
+    "verify": {
+      "type": "string"
+    },
+    "briefing_url": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title",
+    "contact",
+    "company",
+    "briefing_url"
+  ]
+}

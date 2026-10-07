@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Sales Cockpit</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect width=%2216%22 height=%2216%22 rx=%224%22 fill=%22%234b53bc%22/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>AI Sales Agent</h1>
+        <p class="sub"><span id="company">-</span> · Teams Phone · Foundry · Graph · Power Platform</p>
+      </div>
+    </div>
+    <div class="pills" id="integrations" aria-label="Integration status"></div>
+    <div class="top-actions">
+      <span class="live" id="live-dot" title="Live event stream">LIVE</span>
+      <button class="ghost" id="reset-btn" hidden>Reset demo</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="panel" id="lead-panel">
+      <h2>New lead</h2>
+      <form id="lead-form" autocomplete="off">
+        <div class="row">
+          <label>First name<input name="first_name" required maxlength="80"></label>
+          <label>Last name<input name="last_name" maxlength="80"></label>
+        </div>
+        <label>Company<input name="company" required maxlength="160"></label>
+        <div class="row">
+          <label>Mobile phone<input name="phone" required inputmode="tel" placeholder="(801) 555-0123"></label>
+          <label>Email<input name="email" type="email" placeholder="optional"></label>
+        </div>
+        <label class="check"><input type="checkbox" name="consent" required>
+          Lead agreed to a call, which may be placed by an AI assistant and recorded</label>
+        <button type="submit" class="primary">Capture lead</button>
+        <p class="form-msg" id="form-msg" role="status"></p>
+      </form>
+
+      <h2 class="mt">Leads</h2>
+      <ul class="leads" id="leads"></ul>
+    </section>
+
+    <section class="panel call" id="call-panel">
+      <div class="empty" id="call-empty">
+        <p>Capture a lead and press <b>Call via Teams Phone</b>.<br>The conversation fills in here live.</p>
+      </div>
+      <div id="call-view" hidden>
+        <div class="call-head">
+          <div>
+            <h2 id="cv-name">-</h2>
+            <p class="sub" id="cv-company">-</p>
+          </div>
+          <div class="status-chip" id="cv-status">-</div>
+        </div>
+
+        <div class="score-row">
+          <div class="score" id="cv-score-box">
+            <span class="score-num" id="cv-score">--</span>
+            <span class="score-of">/100</span>
+            <span class="band" id="cv-band">incomplete</span>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><span class="k">Estimated opportunity</span><span class="v" id="cv-value">-</span></div>
+            <div class="kpi"><span class="k">Meeting</span><span class="v" id="cv-meeting">not booked</span></div>
+            <div class="kpi"><span class="k">Next action</span><span class="v small" id="cv-next">-</span></div>
+          </div>
+        </div>
+
+        <h3>What the agent learned</h3>
+        <dl class="slots" id="cv-slots"></dl>
+
+        <div class="summary" id="cv-summary-wrap" hidden>
+          <h3>Call summary</h3>
+          <p id="cv-summary"></p>
+        </div>
+
+        <div class="notice" id="cv-browser" hidden></div>
+        <p class="meta" id="cv-meta"></p>
+      </div>
+    </section>
+
+    <section class="panel" id="events-panel">
+      <h2>Live activity</h2>
+      <ol class="events" id="events"></ol>
+      <h2 class="mt">Recent calls</h2>
+      <ul class="calls" id="calls"></ul>
+    </section>
+  </main>
+
+  <template id="lead-item">
+    <li>
+      <div class="li-main"><b class="li-name"></b><span class="li-co"></span></div>
+      <div class="li-actions">
+        <button class="primary sm call-btn">Call via Teams Phone</button>
+        <button class="ghost sm browser-btn" title="Demo: talk to the agent in the Foundry browser preview">Browser preview</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>
