@@ -46,7 +46,9 @@ class SaveAnswersIn(Base):
         description=(
             "Facts the caller stated, keyed by slot name. Allowed slots: "
             + "; ".join(f"{k} ({label})" for k, (_, label) in SLOT_SCHEMA.items())
-            + ". decision_role is one of decision_maker, influencer, neither. pain_points is a list "
+            + ". contract_months_remaining and timeline_months are whole months, rounded up "
+            "(30 days = 1, two weeks = 1, this quarter = 3, a year = 12, already expired = 0)."
+            " decision_role is one of decision_maker, influencer, neither. pain_points is a list "
             "drawn from cost, coverage, service, devices, other. Include the caller's own words as "
             "evidence and lower confidence when the answer was vague."
         ),

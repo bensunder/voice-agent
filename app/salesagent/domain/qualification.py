@@ -44,6 +44,48 @@ SLOT_SCHEMA: dict[str, tuple[type, str]] = {
 }
 
 REQUIRED_FOR_SCORE = ("mobile_lines", "contract_months_remaining", "decision_role")
+MONTH_SLOTS = frozenset({"contract_months_remaining", "timeline_months"})
+
+_WORD_NUMBERS = {
+    "zero": 0, "a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
+    "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "fifteen": 15,
+    "eighteen": 18, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "ninety": 90,
+    "couple": 2, "few": 3, "several": 3,
+}
+_MONTHS_PER_UNIT = {"day": 1 / 30, "week": 7 / 30, "month": 1, "quarter": 3, "year": 12}
+_MONTH_PHRASES = {
+    "now": 0, "immediately": 0, "asap": 0, "right away": 0, "already": 0, "expired": 0,
+    "this month": 1, "next month": 1, "this quarter": 3, "next quarter": 6,
+    "this year": 12, "next year": 12, "end of the year": 12, "end of year": 12,
+}
+
+
+def _parse_months(name: str, text: str) -> int:
+    """Turn spoken durations ("30 days", "two weeks", "this quarter") into whole months, rounded up.
+
+    The voice model is told to send months, but callers speak in days, weeks and quarters;
+    normalising here keeps the score correct even when the model passes the phrase through.
+    """
+    import math
+    import re
+
+    t = text.lower().replace(",", "").replace("-", " ").strip()
+    for phrase, months in _MONTH_PHRASES.items():
+        if phrase in t:
+            return months
+    m = re.search(r"(\d+(?:\.\d+)?|[a-z]+)\s*(day|week|month|quarter|year)s?\b", t)
+    if not m:
+        raise ValueError(f"slot '{name}' must be a number of months, got '{text}'")
+    qty_raw, unit = m.group(1), m.group(2)
+    if qty_raw.replace(".", "", 1).isdigit():
+        qty = float(qty_raw)
+    elif qty_raw in _WORD_NUMBERS:
+        qty = float(_WORD_NUMBERS[qty_raw])
+    else:
+        raise ValueError(f"slot '{name}' must be a number of months, got '{text}'")
+    if "half" in t and unit == "year":
+        qty += 0.5
+    return max(0, math.ceil(qty * _MONTHS_PER_UNIT[unit] - 1e-9))
 
 
 class SlotValue(BaseModel):
@@ -79,9 +121,14 @@ def coerce_slot(name: str, value: Any) -> Any:
             raise ValueError(f"slot '{name}' must be a number")
         if isinstance(value, str):
             digits = value.replace(",", "").strip()
-            if not digits.lstrip("-").isdigit():
+            if digits.lstrip("-").isdigit():
+                value = int(digits)
+            elif name in MONTH_SLOTS:
+                value = _parse_months(name, value)
+            elif digits.lower() in _WORD_NUMBERS:
+                value = _WORD_NUMBERS[digits.lower()]
+            else:
                 raise ValueError(f"slot '{name}' must be a whole number, got '{value}'")
-            value = int(digits)
         value = int(value)
         if value < 0 or value > 1_000_000:
             raise ValueError(f"slot '{name}' out of range")

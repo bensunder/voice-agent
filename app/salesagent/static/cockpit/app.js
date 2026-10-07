@@ -60,7 +60,7 @@ function fmtSlot(name, value) {
   if (value === null || value === undefined) return "-";
   if (Array.isArray(value)) return value.join(", ") || "-";
   if (name === "decision_role") return String(value).replace(/_/g, " ");
-  if (name === "contract_months_remaining" || name === "timeline_months") return `${value} months`;
+  if (name === "contract_months_remaining" || name === "timeline_months") return value === 0 ? "now" : `${value} month${value === 1 ? "" : "s"}`;
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number") return value.toLocaleString("en-US");
   return String(value);

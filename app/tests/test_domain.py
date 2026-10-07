@@ -190,3 +190,26 @@ def test_slot_id_roundtrip_and_spoken():
     c = cands(datetime(2026, 10, 7, 16, 0, tzinfo=UTC))[0]
     assert parse_slot_id(c.slot_id) == (c.rep_upn, c.start)
     assert spoken(c.start, DEN) == "Wednesday, October 7 at 11:00 AM MDT"
+
+
+import pytest as _pytest
+
+from salesagent.domain.qualification import coerce_slot as _coerce
+
+
+@_pytest.mark.parametrize("spoken,months", [
+    ("30 days", 1), ("in the next 30 days", 1), ("two weeks", 1), ("45 days", 2), ("90 days", 3),
+    ("four months", 4), ("4 months", 4), ("this quarter", 3), ("a year", 12), ("18 months", 18),
+    ("a year and a half", 18), ("already expired", 0), ("6", 6),
+])
+def test_spoken_durations_become_months(spoken, months):
+    assert _coerce("contract_months_remaining", spoken) == months
+    assert _coerce("timeline_months", spoken) == months
+
+
+def test_word_numbers_and_rejects():
+    assert _coerce("mobile_lines", "five") == 5
+    with _pytest.raises(ValueError):
+        _coerce("mobile_lines", "lots")
+    with _pytest.raises(ValueError):
+        _coerce("timeline_months", "soonish")

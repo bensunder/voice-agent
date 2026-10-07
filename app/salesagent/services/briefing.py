@@ -71,8 +71,8 @@ async def build(c: Container, attempt_id: uuid.UUID) -> dict[str, Any]:
 def rep_card_payload(b: dict[str, Any], kind: str) -> dict[str, Any]:
     """Flat JSON for the Power Automate flow (easy to bind in the adaptive card)."""
     money = f"${b['contract_value']:,.0f}" if b.get("contract_value") else "n/a"
-    renewal = (f"{b['contract_months_remaining']} months"
-               if b.get("contract_months_remaining") is not None else "unknown")
+    m = b.get("contract_months_remaining")
+    renewal = "unknown" if m is None else "now" if m == 0 else f"{m} month{'' if m == 1 else 's'}"
     plan = b.get("plan") or {}
     titles = {"transfer": "Hot lead - live transfer incoming",
               "escalation": f"{plan.get('priority', 'P2')} escalation from campaign"}
