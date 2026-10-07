@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
 from contextlib import asynccontextmanager
 
@@ -284,3 +285,32 @@ async def test_concurrent_holds_on_one_slot_have_exactly_one_winner(apps):
         assert slot not in offered
     finally:
         c.settings.demo_mode = True
+
+
+async def test_mcp_endpoint(apps):
+    ck, tl = apps
+    rpc = lambda m, i=1, p=None: {"jsonrpc": "2.0", "id": i, "method": m, "params": p or {}}  # noqa: E731
+    assert (await tl.post("/mcp", json=rpc("initialize"))).status_code == 401
+    r = await tl.post("/mcp", headers=KEY, json=rpc("initialize", p={"protocolVersion": "2025-06-18"}))
+    assert r.json()["result"]["protocolVersion"] == "2025-06-18"
+    assert (await tl.post("/mcp", headers=KEY, json={"jsonrpc": "2.0", "method": "notifications/initialized"})).status_code == 202
+    bearer = {"Authorization": "Bearer " + KEY["X-API-Key"]}
+    tools_ = (await tl.post("/mcp", headers=bearer, json=rpc("tools/list"))).json()["result"]["tools"]
+    names = {t["name"] for t in tools_}
+    assert names == {"get_lead_context", "save_answers", "get_offer_slots", "hold_slot", "book_meeting",
+                     "request_transfer", "schedule_callback", "opt_out", "complete_call"}
+    save = next(t for t in tools_ if t["name"] == "save_answers")
+    assert "$ref" not in json.dumps(save["inputSchema"]) and "call_token" in save["inputSchema"]["properties"]
+
+    lead = await new_lead(ck, phone="(801) 555-0166", first="Noa")
+    await ck.post(f"/api/leads/{lead}/browser-session", headers=AUTH)
+    call = lambda name, args: rpc("tools/call", p={"name": name, "arguments": {"call_token": "browser", **args}})  # noqa: E731
+    r = (await tl.post("/mcp", headers=KEY, json=call("get_lead_context", {}))).json()["result"]
+    assert r["isError"] is False and r["structuredContent"]["first_name"] == "Noa"
+    r = (await tl.post("/mcp", headers=KEY, json=call("save_answers", {"answers": {"mobile_lines": {"value": 600}}}))).json()["result"]
+    assert r["structuredContent"]["band"] == "incomplete"
+    r = (await tl.post("/mcp", headers=KEY, json=call("save_answers", {"answers": {"mobile_lines": {"value": "lots"}}}))).json()["result"]
+    assert r["isError"] is True and r["structuredContent"]["error"]["code"] == "INVALID_ARGUMENTS"
+    r = (await tl.post("/mcp", headers=KEY, json=rpc("tools/call", p={"name": "nope", "arguments": {}}))).json()
+    assert r["error"]["code"] == -32602
+    assert (await tl.post("/mcp", headers=KEY, json=rpc("bogus"))).json()["error"]["code"] == -32601

@@ -179,6 +179,9 @@ def create_app() -> FastAPI:
     )
     install(app)
     app.include_router(router)
+    from .mcp import build_router as build_mcp_router  # same tools over MCP for Foundry voice agents
+
+    app.include_router(build_mcp_router())
 
     spec_cache: dict[str, Any] = {}
 

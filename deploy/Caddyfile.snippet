@@ -9,7 +9,7 @@ sales-api.whyaidata.com {
 		-Server
 	}
 	# Only the agent tool surface and its OpenAPI spec are public.
-	@allowed path /tools/* /agent/openapi.json /healthz
+	@allowed path /tools/* /agent/openapi.json /healthz /mcp
 	handle @allowed {
 		reverse_proxy 127.0.0.1:8310
 	}
