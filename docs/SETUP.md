@@ -64,21 +64,21 @@ Edit settings: `nano .env` then `./deploy.sh`. Edit a secret: `nano secrets/<nam
 
 ## D. Foundry voice agent
 
-1. Foundry portal -> your project -> **Build -> Agents -> Create -> Voice-based agent**,
-   name `sales-qualifier`. Pick a real-time model and a natural US English voice.
-2. **Instructions**: paste `agent/instructions.md`.
-3. **Inputs** (structured inputs): add `first_name`, `company`, `company_name`,
-   `product_interest`, `call_token` (string). Give `call_token` the default value `browser`, so
-   the browser preview works without per-call inputs. If the instructions editor uses a
-   different placeholder syntax than `{{name}}`, switch the placeholders to it.
-4. **Tools -> Add -> OpenAPI**: import `https://sales-api.whyaidata.com/agent/openapi.json`.
-   Authentication: **API key**, header `X-API-Key`, value = `cat secrets/tool_api_key`.
-5. **Transfer target** (for the warm hand-off): name `sales_specialist`, kind **Teams**, value =
-   the rep's Entra user object ID.
-6. Test in the **browser preview**: in the cockpit capture a lead, press **Browser preview**,
-   then talk to the agent. The cockpit fills in live.
-7. Give the service principal from C the **Foundry User** (Azure AI User) role on the project,
-   and set in `.env`: `FOUNDRY_PROJECT_ENDPOINT`, `FOUNDRY_AGENT_NAME=sales-qualifier`.
+Full settings, the MCP tool form and the exact instructions are in `agent/instructions.md`.
+
+1. Foundry portal -> your project -> **Build -> Agents -> Create -> Voice agent**. Pick a
+   real-time model and a natural US English voice; set the fixed greeting.
+2. **Instructions**: paste the block from `agent/instructions.md` (no placeholders).
+3. **Tools -> Add a MCP tool**: name `sales-tools`, endpoint
+   `https://sales-api.whyaidata.com/mcp`, key header `X-API-Key` = `cat secrets/tool_api_key`.
+   Attach it from the agent's Tools panel and **Save** (creates a new agent version).
+4. **Transfer target** (optional warm hand-off): name `sales_specialist`, kind **Teams**,
+   value = the rep's Entra user object ID.
+5. Test in the **browser preview**: cockpit -> **Reset demo** -> capture a lead (consent ticked)
+   -> **Browser preview** (armed for 30 minutes) -> Foundry **Start**. The cockpit fills in live.
+6. For real Teams calls: give the service principal from C the **Foundry User** (Azure AI User)
+   role on the project, and set in `.env`: `FOUNDRY_PROJECT_ENDPOINT`,
+   `FOUNDRY_AGENT_NAME=<your agent name>`.
 
 ## E. Power Platform
 

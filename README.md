@@ -37,7 +37,10 @@ Two demos in one stack:
 | `app/salesagent/worker.py` | Outbox delivery with retries, call-job tracking, lease expiry |
 | `app/salesagent/provision_dataverse.py` | Creates the Dataverse table and columns |
 | `app/salesagent/doctor.py` | End-to-end integration check |
-| `agent/instructions.md` | Voice agent instructions |
+| `app/salesagent/api/mcp.py` | The same tools over MCP (Streamable HTTP) for Foundry voice agents |
+| `app/salesagent/trace_maf.py` | Runs the MAF workflows live and prints every executor hand-off |
+| `app/salesagent/proof.py` | Proves LLM controls live: guardrails, grounding, budget, tracing, fallback |
+| `agent/instructions.md` | Foundry voice agent settings, MCP tool setup and exact instructions |
 | `power-automate/` | Flow trigger schema + adaptive card |
 | `docs/SETUP.md`, `docs/DEMO.md`, `docs/ORCHESTRATOR.md` | Runbook, demo script, orchestrator design |
 
@@ -55,6 +58,20 @@ Two demos in one stack:
   connected and the agent is told what to say when one is unavailable.
 - **Locked down.** Only loopback ports, Postgres on an internal-only network, read-only
   containers, dropped capabilities, secrets as files.
+
+## Show it running
+
+On the server, from the repo directory:
+
+```bash
+# MAF orchestration: both workflow graphs + one pass with streamed executor events
+docker compose stop worker
+docker compose run --rm worker python -m salesagent.trace_maf
+docker compose start worker
+
+# LLM controls: 8 misbehaving-model scenarios -> cost ledger, guardrail log, spans, PASS/FAIL
+docker compose exec worker python -m salesagent.proof
+```
 
 ## Quick start
 
