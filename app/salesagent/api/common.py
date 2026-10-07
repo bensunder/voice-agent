@@ -18,6 +18,7 @@ from ..config import Settings, get_settings, integration_status
 from ..container import Container
 from ..db import migrate
 from ..logging_setup import configure_logging
+from .. import telemetry
 from ..services.errors import ServiceError
 
 log = logging.getLogger("salesagent.api")
@@ -30,6 +31,7 @@ def lifespan_factory(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings: Settings = get_settings()
         configure_logging(settings.log_level)
+        telemetry.configure(settings.otel_service_name, settings.otel_exporter_otlp_endpoint, settings.environment)
         settings.require_secrets()
         await migrate(settings.database_url.get_secret_value())
         container = await Container.create(settings, pool_size=pool_size)

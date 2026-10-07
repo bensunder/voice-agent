@@ -23,8 +23,8 @@ os.environ.update(
     }
 )
 
-import psycopg  # noqa: E402
-import pytest  # noqa: E402
+import psycopg
+import pytest
 
 AUTH = {"Authorization": "Basic " + base64.b64encode(b"demo:test-cockpit-pass").decode()}
 KEY = {"X-API-Key": "test-tool-api-key-0123456789abcdef"}

@@ -26,6 +26,9 @@ async def build(c: Container, attempt_id: uuid.UUID) -> dict[str, Any]:
         sc = await cur.fetchone() or {}
         cur = await conn.execute("SELECT * FROM meeting WHERE attempt_id=%s", (attempt_id,))
         mt = await cur.fetchone()
+        cur = await conn.execute("SELECT plan, plan_source FROM campaign_lead WHERE last_attempt_id=%s"
+                                 " AND plan IS NOT NULL LIMIT 1", (attempt_id,))
+        esc = await cur.fetchone()
 
     valuation = sc.get("valuation") or {}
     contact = f"{a['first_name']} {a['last_name']}".strip()
@@ -60,6 +63,8 @@ async def build(c: Container, attempt_id: uuid.UUID) -> dict[str, Any]:
         "rep_upn": mt["rep_upn"] if mt else None,
         "rep_name": rep_name,
         "briefing_url": f"{c.settings.public_cockpit_url}/#/attempt/{attempt_id}",
+        "plan": esc["plan"] if esc else None,
+        "plan_source": esc["plan_source"] if esc else None,
     }
 
 
@@ -68,9 +73,17 @@ def rep_card_payload(b: dict[str, Any], kind: str) -> dict[str, Any]:
     money = f"${b['contract_value']:,.0f}" if b.get("contract_value") else "n/a"
     renewal = (f"{b['contract_months_remaining']} months"
                if b.get("contract_months_remaining") is not None else "unknown")
+    plan = b.get("plan") or {}
+    titles = {"transfer": "Hot lead - live transfer incoming",
+              "escalation": f"{plan.get('priority', 'P2')} escalation from campaign"}
+    summary = b.get("summary") or ""
+    next_action = b.get("next_action") or ""
+    if plan:
+        summary = plan.get("headline", "") + ". " + " ".join(f"- {t}" for t in plan.get("talking_points", []))
+        next_action = plan.get("next_step") or next_action
     return {
-        "kind": kind,  # "final" | "transfer"
-        "title": ("Hot lead - live transfer incoming" if kind == "transfer" else "New AI-qualified opportunity"),
+        "kind": kind,  # "final" | "transfer" | "escalation"
+        "title": titles.get(kind, "New AI-qualified opportunity"),
         "rep_upn": b.get("rep_upn") or "",
         "contact": b["contact_name"],
         "company": b["company"],
@@ -85,8 +98,8 @@ def rep_card_payload(b: dict[str, Any], kind: str) -> dict[str, Any]:
         "estimated_value": money,
         "meeting": b.get("meeting_when") or "not booked",
         "join_url": b.get("join_url") or "",
-        "summary": b.get("summary") or "",
-        "next_action": b.get("next_action") or "",
+        "summary": summary,
+        "next_action": next_action,
         "reason_codes": ", ".join(b.get("reason_codes") or []),
         "verify": ", ".join(b.get("verify") or []),
         "briefing_url": b["briefing_url"],
@@ -94,4 +107,4 @@ def rep_card_payload(b: dict[str, Any], kind: str) -> dict[str, Any]:
 
 
 def should_notify(b: dict[str, Any], kind: str) -> bool:
-    return kind == "transfer" or b.get("band") in ("hot", "qualified") or b.get("meeting_start") is not None
+    return kind in ("transfer", "escalation") or b.get("band") in ("hot", "qualified") or b.get("meeting_start") is not None

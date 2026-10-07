@@ -18,6 +18,8 @@ from .container import Container
 from .db import audit, migrate
 from .integrations.http import IntegrationError, NotConfigured
 from .logging_setup import configure_logging
+from .orchestration import runner
+from . import telemetry
 from .services import briefing
 from .services.agent_tools import enqueue_finalize
 
@@ -140,8 +142,12 @@ async def expire_leases(c: Container) -> None:
 async def run() -> None:
     settings = get_settings()
     configure_logging(settings.log_level)
+    telemetry.configure(f"{settings.otel_service_name}-worker", settings.otel_exporter_otlp_endpoint,
+                        settings.environment)
     await migrate(settings.database_url.get_secret_value())
-    c = await Container.create(settings, pool_size=4)
+    c = await Container.create(settings, pool_size=max(8, settings.outcome_concurrency + 4))
+    planner = runner.make_planner(c)
+    log.info("escalation planner model=%s", planner.model)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
@@ -152,6 +158,7 @@ async def run() -> None:
         while not stop.is_set():
             try:
                 busy = await process_outbox(c)
+                busy += await runner.tick(c, planner)
                 if tick % 2 == 0:
                     await track_calls(c)
                 if tick % 5 == 0:

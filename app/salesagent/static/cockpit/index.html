@@ -16,6 +16,10 @@
         <p class="sub"><span id="company">-</span> · Teams Phone · Foundry · Graph · Power Platform</p>
       </div>
     </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="call" role="tab">Live call</button>
+      <button class="tab" data-view="campaign" role="tab">Campaign orchestrator</button>
+    </nav>
     <div class="pills" id="integrations" aria-label="Integration status"></div>
     <div class="top-actions">
       <span class="live" id="live-dot" title="Live event stream">LIVE</span>
@@ -23,7 +27,7 @@
     </div>
   </header>
 
-  <main class="grid">
+  <main class="grid" id="view-call">
     <section class="panel" id="lead-panel">
       <h2>New lead</h2>
       <form id="lead-form" autocomplete="off">
@@ -93,6 +97,82 @@
     </section>
   </main>
 
+
+  <main class="grid" id="view-campaign" hidden>
+    <section class="panel">
+      <h2>New campaign</h2>
+      <form id="camp-form" autocomplete="off">
+        <label>Name<input name="name" required maxlength="120" value="Q4 enterprise wireless"></label>
+        <div class="row">
+          <label>Mode
+            <select name="mode" id="camp-mode">
+              <option value="simulation">Simulation (no real calls)</option>
+              <option value="live">Live (Teams Phone)</option>
+            </select>
+          </label>
+          <label id="camp-count-wrap">Leads<input name="lead_count" type="number" min="1" max="20000" value="2000"></label>
+        </div>
+        <div class="row">
+          <label>Max concurrent calls<input name="max_concurrent" type="number" min="1" max="500" value="40"></label>
+          <label>Max attempts<input name="max_attempts" type="number" min="1" max="6" value="3"></label>
+        </div>
+        <div class="row">
+          <label>LLM budget (USD)<input name="llm_budget_usd" type="number" min="0" step="0.01" value="1.00"></label>
+          <label>Rep escalations / day<input name="escalation_daily_cap" type="number" min="0" value="400"></label>
+        </div>
+        <label class="check"><input type="checkbox" name="respect_calling_window" id="camp-window">
+          Respect calling hours (lead's local time)</label>
+        <button type="submit" class="primary">Create campaign</button>
+        <p class="form-msg" id="camp-msg" role="status"></p>
+      </form>
+      <h2 class="mt">Campaigns</h2>
+      <ul class="calls" id="camp-list"></ul>
+    </section>
+
+    <section class="panel call">
+      <div class="empty" id="camp-empty"><p>Create a campaign to watch the MAF workflow pace, gate, dial,<br>retry and escalate thousands of leads.</p></div>
+      <div id="camp-view" hidden>
+        <div class="call-head">
+          <div>
+            <h2 id="cp-name">-</h2>
+            <p class="sub" id="cp-sub">-</p>
+          </div>
+          <div class="cp-actions">
+            <span class="status-chip" id="cp-status">-</span>
+            <button class="primary sm" id="cp-start">Start</button>
+            <button class="ghost sm" id="cp-pause">Pause</button>
+            <button class="ghost sm" id="cp-stop">Stop</button>
+          </div>
+        </div>
+        <div class="kpis grid4">
+          <div class="kpi"><span class="k">Leads</span><span class="v" id="cp-leads">-</span></div>
+          <div class="kpi"><span class="k">In flight / max</span><span class="v" id="cp-pacing">-</span></div>
+          <div class="kpi"><span class="k">Escalated to reps</span><span class="v" id="cp-esc">-</span></div>
+          <div class="kpi"><span class="k">Qualified pipeline</span><span class="v" id="cp-pipe">-</span></div>
+        </div>
+        <h3>Funnel</h3>
+        <div class="funnel" id="cp-funnel"></div>
+        <h3>MAF workflows</h3>
+        <div class="flow">
+          <div class="flow-row"><span class="node">Pacer</span><span class="arr">→</span><span class="node">Compliance gate</span><span class="arr">→</span><span class="node accent">Dialer · Foundry voice agent</span><span class="arr">⇢</span><span class="node">Retry scheduler</span><span class="arr">/</span><span class="node">Suppressor</span></div>
+          <div class="flow-row"><span class="node">Outcome classifier</span><span class="arr">→</span><span class="node accent">Escalation agent</span><span class="arr">→</span><span class="node">Escalation dispatcher</span><span class="arr">/</span><span class="node">Nurture</span><span class="arr">/</span><span class="node">Retry</span><span class="arr">/</span><span class="node">Close</span></div>
+        </div>
+        <h3>Recent escalations</h3>
+        <ul class="esc" id="cp-escalations"></ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Escalation agent</h2>
+      <p class="sub" id="ag-model">-</p>
+      <div class="budget"><div class="budget-bar"><span id="ag-bar"></span></div><p class="sub" id="ag-spend">-</p></div>
+      <dl class="stats" id="ag-stats"></dl>
+      <h2 class="mt">Guardrails</h2>
+      <ul class="rules" id="ag-guards"></ul>
+      <p class="sub small-note">Input: injection screening, PII redaction. Output: schema, grounded numbers &amp; carriers, no pricing, no PII. Action: policy-allowed channels only. Violations fall back to the deterministic plan.</p>
+    </section>
+  </main>
+
   <template id="lead-item">
     <li>
       <div class="li-main"><b class="li-name"></b><span class="li-co"></span></div>
@@ -104,5 +184,6 @@
   </template>
 
   <script src="/assets/app.js" defer></script>
+  <script src="/assets/campaign.js" defer></script>
 </body>
 </html>

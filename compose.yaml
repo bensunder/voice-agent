@@ -93,7 +93,7 @@ services:
     command: ["python", "-m", "salesagent.worker"]
     deploy:
       resources:
-        limits: { memory: 256m }
+        limits: { memory: 512m }
 
 networks:
   backend:

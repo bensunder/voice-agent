@@ -9,10 +9,10 @@ from contextlib import asynccontextmanager
 import httpx
 import pytest
 
+from salesagent import worker
 from salesagent.api import cockpit, tool_api
 from salesagent.integrations.http import IntegrationError
 from salesagent.integrations.teams_phone import CallJobState
-from salesagent import worker
 
 from .conftest import AUTH, KEY
 

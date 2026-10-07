@@ -7,7 +7,10 @@ from datetime import datetime, timezone
 
 import httpx
 import pytest
-from azure.ai.projects.models import CreateTelephonyCallJobRequest, TelephonyOutboundDestination
+from azure.ai.projects.models import (
+    CreateTelephonyCallJobRequest,
+    TelephonyOutboundDestination,
+)
 
 from salesagent.integrations.dataverse import DataverseClient
 from salesagent.integrations.graph import GraphClient

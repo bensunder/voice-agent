@@ -8,7 +8,13 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from salesagent.domain import compliance as gate
-from salesagent.domain.qualification import Band, PriceBook, SlotUpdate, score, value_opportunity
+from salesagent.domain.qualification import (
+    Band,
+    PriceBook,
+    SlotUpdate,
+    score,
+    value_opportunity,
+)
 from salesagent.domain.scheduling import find_candidates, parse_slot_id, spoken
 from salesagent.security import TokenError, mint_call_token, verify_call_token
 

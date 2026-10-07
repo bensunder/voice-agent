@@ -103,3 +103,43 @@ button:disabled { opacity: .5; cursor: wait; }
 .calls li { border-top: 1px solid var(--line); padding: 8px 0; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
 .calls li:hover b { color: var(--accent); }
 .calls .cs { color: var(--muted); font-size: 12px; text-align: right; white-space: nowrap; }
+
+.tabs { display: flex; gap: 4px; background: var(--chip); padding: 3px; border-radius: 10px; }
+.tab { background: transparent; border: 0; padding: 6px 12px; border-radius: 8px; color: var(--muted); font-weight: 600; font-size: 12.5px; }
+.tab.active { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+select { display: block; width: 100%; margin-top: 4px; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; }
+.cp-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.grid4 { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; }
+@media (max-width: 640px) { .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mode-sim { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--warn); background: rgba(178,106,0,.12); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+.mode-live { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--bad); background: rgba(192,57,43,.12); padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
+.funnel { display: grid; gap: 6px; }
+.fbar { display: grid; grid-template-columns: 110px 1fr 56px; gap: 10px; align-items: center; font-size: 12.5px; }
+.fbar .track { height: 12px; background: var(--chip); border-radius: 99px; overflow: hidden; }
+.fbar .fill { height: 100%; border-radius: 99px; background: var(--accent); transition: width .6s ease; }
+.fbar .n { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.fill.escalated { background: var(--ok); } .fill.nurture { background: var(--nurt); } .fill.retry_wait { background: #2aa3d8; }
+.fill.in_call, .fill.dialing { background: var(--bad); } .fill.suppressed, .fill.exhausted, .fill.disqualified, .fill.closed { background: var(--dq); }
+.flow { display: grid; gap: 8px; font-size: 12px; }
+.flow-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.node { border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; background: var(--bg); }
+.node.accent { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.arr { color: var(--muted); }
+.esc { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.esc > li { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.esc .eh { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.esc .pri { font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(194,65,12,.12); color: var(--hot); margin-right: 6px; }
+.esc .pri.P2 { background: rgba(31,138,76,.12); color: var(--ok); } .esc .pri.P3 { background: var(--chip); color: var(--muted); }
+.esc .src { font-size: 11px; color: var(--muted); }
+.esc ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; list-style: disc; }
+.esc ul li { border: 0; padding: 1px 0; }
+.budget { margin: 12px 0; }
+.budget-bar { height: 10px; background: var(--chip); border-radius: 99px; overflow: hidden; }
+.budget-bar span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .6s; }
+.budget-bar span.warn { background: var(--warn); } .budget-bar span.over { background: var(--bad); }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 0; font-size: 13px; }
+.stats dt { color: var(--muted); } .stats dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.rules { list-style: none; padding: 0; margin: 0; font-size: 12.5px; }
+.rules li { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding: 6px 0; }
+.rules .stage { color: var(--muted); font-size: 11px; text-transform: uppercase; margin-right: 6px; }
+.small-note { font-size: 11.5px; margin-top: 12px; }

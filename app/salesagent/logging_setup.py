@@ -27,5 +27,5 @@ def configure_logging(level: str = "INFO") -> None:
     root = logging.getLogger()
     root.handlers[:] = [handler]
     root.setLevel(level.upper())
-    for noisy in ("azure", "httpx", "httpcore", "uvicorn.access"):
+    for noisy in ("azure", "httpx", "httpcore", "uvicorn.access", "agent_framework"):
         logging.getLogger(noisy).setLevel(logging.WARNING)

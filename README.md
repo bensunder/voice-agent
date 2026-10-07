@@ -17,6 +17,13 @@ Phone ◄── PSTN ◄── Teams service number ◄─┘  (resource account
                                                                └► Power Automate ─► Teams card to rep
 ```
 
+Two demos in one stack:
+1. **Live call**: one lead, a real Teams Phone call, live cockpit.
+2. **Campaign orchestrator**: a **Microsoft Agent Framework** workflow driving pacing,
+   compliance, retries and escalation across thousands of leads, with the Foundry voice agent
+   as the dial step, and a MAF escalation agent with grounding, guardrails, token-cost
+   management and OpenTelemetry. See `docs/ORCHESTRATOR.md`.
+
 ## What is in the box
 
 | Path | What |
@@ -25,12 +32,14 @@ Phone ◄── PSTN ◄── Teams service number ◄─┘  (resource account
 | `app/salesagent/api/cockpit.py` + `static/cockpit` | Live cockpit (lead form, live call, timeline) over SSE |
 | `app/salesagent/domain/` | Deterministic scoring rubric, price book, compliance gate, slot finding |
 | `app/salesagent/integrations/` | Teams Phone (Foundry call jobs), Graph, Dataverse, Power Automate |
+| `app/salesagent/orchestration/` | MAF workflows, escalation agent, guardrails, cost ledger, simulation |
+| `app/salesagent/telemetry.py` | OpenTelemetry traces + metrics (MAF instrumentation enabled) |
 | `app/salesagent/worker.py` | Outbox delivery with retries, call-job tracking, lease expiry |
 | `app/salesagent/provision_dataverse.py` | Creates the Dataverse table and columns |
 | `app/salesagent/doctor.py` | End-to-end integration check |
 | `agent/instructions.md` | Voice agent instructions |
 | `power-automate/` | Flow trigger schema + adaptive card |
-| `docs/SETUP.md`, `docs/DEMO.md` | Runbook and demo script |
+| `docs/SETUP.md`, `docs/DEMO.md`, `docs/ORCHESTRATOR.md` | Runbook, demo script, orchestrator design |
 
 ## Design decisions
 

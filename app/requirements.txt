@@ -6,4 +6,9 @@ psycopg[binary]==3.2.10
 psycopg-pool==3.2.6
 httpx==0.28.1
 azure-identity==1.25.0
-azure-ai-projects==2.8.0
+# agent-framework-foundry 1.14 requires azure-ai-projects <2.8; 2.7.0 includes the telephony call-job API
+azure-ai-projects==2.7.0
+agent-framework-core==1.20.0
+agent-framework-foundry==1.14.0
+opentelemetry-sdk==1.45.1
+opentelemetry-exporter-otlp-proto-http==1.45.1

@@ -99,6 +99,26 @@ class Settings(BaseSettings):
     worker_poll_seconds: float = 2.0
     outbox_max_attempts: int = 8
 
+    # --- MAF campaign orchestrator: escalation agent model --------------------
+    # Foundry model deployment used by the MAF escalation agent (e.g. gpt-4.1-mini).
+    # Uses FOUNDRY_PROJECT_ENDPOINT and the Entra service principal above.
+    escalation_model: str = ""
+    escalation_max_output_tokens: int = 400
+    escalation_temperature: float = 0.2
+    escalation_timeout_seconds: float = 20.0
+    # Token pricing (USD per 1M tokens) used for the cost ledger and budget checks.
+    llm_price_input_per_1m: float = 0.40
+    llm_price_cached_input_per_1m: float = 0.10
+    llm_price_output_per_1m: float = 1.60
+    llm_daily_budget_usd: float = 5.0
+    outcome_concurrency: int = 16
+
+    # --- telemetry ------------------------------------------------------------
+    otel_service_name: str = "ai-sales-agent"
+    # OTLP/HTTP collector, e.g. http://otel-collector:4318 (an OpenTelemetry Collector can
+    # forward to Azure Monitor / Application Insights, Grafana, Jaeger, ...)
+    otel_exporter_otlp_endpoint: str = ""
+
     @field_validator("business_timezone")
     @classmethod
     def _valid_tz(cls, v: str) -> str:
@@ -149,6 +169,10 @@ class Settings(BaseSettings):
         return bool(self.power_automate_webhook_url.get_secret_value())
 
     @property
+    def escalation_agent_configured(self) -> bool:
+        return self.entra_configured and bool(self.foundry_project_endpoint and self.escalation_model)
+
+    @property
     def teams_phone_configured(self) -> bool:
         return self.entra_configured and all(
             [
@@ -183,6 +207,7 @@ def integration_status(s: Settings) -> dict[str, bool]:
         "graph": s.graph_configured,
         "dataverse": s.dataverse_configured,
         "power_automate": s.power_automate_configured,
+        "escalation_agent": s.escalation_agent_configured,
     }
 
 

@@ -41,6 +41,19 @@ Play John:
   blocked by the gate.
 - **Scale path:** Foundry call jobs with retry policies, ACS concurrency, pacing by rep capacity.
 
+## Demo 2: Campaign orchestrator at scale (5 min)
+1. Cockpit -> **Campaign orchestrator** tab. Create *Q4 enterprise wireless*: Simulation,
+   2,000 leads, 40 concurrent, 3 attempts, $1.00 LLM budget. Press **Start**.
+2. Narrate the **MAF workflows** while the funnel moves: the Pacer never exceeds 40 in flight;
+   the compliance gate runs before every dial; no-answers come back as *Retry wait* and are
+   re-dialled; leads exhaust after 3 attempts.
+3. **Escalations** appear with P1/P2 plans written by the **MAF escalation agent**: grounded in
+   the call facts, channel chosen from what policy allows.
+4. Right panel: **cost** (spend vs budget, cost per escalation, cache hits), **guardrails**
+   (prompt-injection attempts removed, PII redacted, output violations fell back to rules).
+5. Close: "Switch the mode to Live and the Dialer step becomes the Foundry voice agent on the
+   Teams number; the same workflow, gate, budget and guardrails apply."
+
 ## Fallbacks
 | If | Do |
 |---|---|

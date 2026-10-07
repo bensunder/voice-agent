@@ -108,7 +108,8 @@ def agent_inputs(c: Container, lead: dict[str, Any], token: str) -> dict[str, An
     }
 
 
-async def start_teams_call(c: Container, lead_id: uuid.UUID, requested_by: str) -> dict[str, Any]:
+async def start_teams_call(c: Container, lead_id: uuid.UUID, requested_by: str,
+                           campaign_id: uuid.UUID | None = None) -> dict[str, Any]:
     """Gate the lead, record the attempt, then place the call over Teams Phone."""
     s = c.settings
     now = datetime.now(timezone.utc)
@@ -149,9 +150,9 @@ async def start_teams_call(c: Container, lead_id: uuid.UUID, requested_by: str) 
         attempt_id = uuid.uuid4()
         status = "queued" if decision.allowed else "blocked"
         await conn.execute(
-            "INSERT INTO call_attempt (id, lead_id, channel, status, gate_reason, idempotency_key)"
-            " VALUES (%s,%s,'teams_phone',%s,%s,%s)",
-            (attempt_id, lead_id, status, decision.reason, f"attempt:{attempt_id}"),
+            "INSERT INTO call_attempt (id, lead_id, channel, status, gate_reason, idempotency_key, campaign_id)"
+            " VALUES (%s,%s,'teams_phone',%s,%s,%s,%s)",
+            (attempt_id, lead_id, status, decision.reason, f"attempt:{attempt_id}", campaign_id),
         )
         await audit(conn, "gate_decision", lead_id=lead_id, attempt_id=attempt_id,
                     detail={"verdict": decision.verdict.value, "reason": decision.reason,

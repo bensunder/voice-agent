@@ -84,7 +84,7 @@ function describe(ev) {
 function renderIntegrations(integ) {
   const box = $("#integrations");
   box.replaceChildren();
-  const names = { teams_phone: "Teams Phone", graph: "Microsoft Graph", dataverse: "Dataverse", power_automate: "Power Automate" };
+  const names = { teams_phone: "Teams Phone", graph: "Microsoft Graph", dataverse: "Dataverse", power_automate: "Power Automate", escalation_agent: "MAF agent" };
   for (const [k, label] of Object.entries(names)) {
     const p = el("span", "pill" + (integ[k] ? " on" : ""), label);
     p.title = integ[k] ? "Connected" : "Not configured on this server";

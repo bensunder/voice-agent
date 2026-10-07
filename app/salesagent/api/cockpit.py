@@ -26,7 +26,8 @@ from ..config import integration_status
 from ..container import Container
 from ..domain.qualification import SLOT_SCHEMA
 from ..services import briefing, leads
-from ..services.errors import ServiceError, Unauthorized
+from ..orchestration import store as campaign_store
+from ..services.errors import NotFound, ServiceError, Unauthorized
 from ..security import constant_time_equals
 from .common import install, lifespan_factory
 
@@ -110,13 +111,14 @@ async def state(request: Request) -> dict[str, Any]:
                FROM call_attempt a JOIN lead l ON l.id=a.lead_id
                LEFT JOIN score_result sr ON sr.attempt_id=a.id
                LEFT JOIN meeting m ON m.attempt_id=a.id
-               WHERE l.tenant_key=%s ORDER BY a.created_at DESC LIMIT 25""",
+               WHERE l.tenant_key=%s AND a.channel <> 'simulation' ORDER BY a.created_at DESC LIMIT 25""",
             (s.tenant_key,),
         )
         attempts = await cur.fetchall()
         cur = await conn.execute(
             "SELECT id, first_name, last_name, company, phone_e164, status, created_at FROM lead"
-            " WHERE tenant_key=%s ORDER BY created_at DESC LIMIT 25", (s.tenant_key,))
+            " WHERE tenant_key=%s AND consent_source <> %s ORDER BY created_at DESC LIMIT 25",
+            (s.tenant_key, campaign_store.SYNTHETIC_SOURCE))
         lead_rows = await cur.fetchall()
         cur = await conn.execute(
             "SELECT count(*) FILTER (WHERE status='pending') AS pending,"
@@ -169,14 +171,52 @@ async def browser_session(lead_id: uuid.UUID, request: Request) -> dict[str, Any
     return await leads.arm_browser_session(_c(request), lead_id)
 
 
+@router.get("/campaigns")
+async def list_campaigns(request: Request) -> list[dict[str, Any]]:
+    c = _c(request)
+    async with c.pool.connection() as conn:
+        cur = await conn.execute(
+            """SELECT cp.id, cp.name, cp.mode, cp.status, cp.created_at,
+                      (SELECT count(*) FROM campaign_lead cl WHERE cl.campaign_id=cp.id) AS leads,
+                      (SELECT count(*) FROM campaign_lead cl WHERE cl.campaign_id=cp.id AND cl.status='escalated') AS escalated
+               FROM campaign cp WHERE cp.tenant_key=%s ORDER BY cp.created_at DESC LIMIT 20""",
+            (c.settings.tenant_key,))
+        return list(await cur.fetchall())
+
+
+@router.post("/campaigns", status_code=201)
+async def create_campaign(body: campaign_store.CampaignIn, request: Request) -> dict[str, Any]:
+    return await campaign_store.create(_c(request), body)
+
+
+@router.get("/campaigns/{campaign_id}")
+async def campaign_detail(campaign_id: uuid.UUID, request: Request) -> dict[str, Any]:
+    c = _c(request)
+    data = await campaign_store.summary(c, campaign_id)
+    if not data:
+        raise NotFound("CAMPAIGN_NOT_FOUND", "campaign not found")
+    data["escalation_agent"] = {"configured": c.settings.escalation_agent_configured,
+                                "model": c.settings.escalation_model or None}
+    return data
+
+
+@router.post("/campaigns/{campaign_id}/{action}")
+async def campaign_action(campaign_id: uuid.UUID, action: str, request: Request) -> dict[str, str]:
+    target = {"start": "running", "resume": "running", "pause": "paused", "stop": "stopped"}.get(action)
+    if not target:
+        raise NotFound("UNKNOWN_ACTION", "use start, pause, resume or stop")
+    return await campaign_store.set_status(_c(request), campaign_id, target)
+
+
 @router.post("/demo/reset")
 async def demo_reset(request: Request, user: str = Depends(require_user)) -> dict[str, str]:
     c = _c(request)
     if not c.settings.demo_mode:
         raise ServiceError("DEMO_MODE_OFF", "reset is only available in demo mode")
     async with c.pool.connection() as conn, conn.transaction():
-        await conn.execute("TRUNCATE outbox, audit_event, meeting, slot_hold, score_result,"
-                           " qualification_slot, call_attempt, opt_out, lead RESTART IDENTITY")
+        await conn.execute("TRUNCATE outbox, audit_event, meeting, slot_hold, score_result, qualification_slot,"
+                           " call_attempt, opt_out, campaign_lead, campaign, guardrail_event, llm_usage,"
+                           " plan_cache, lead RESTART IDENTITY")
         await conn.execute("INSERT INTO audit_event (kind, detail) VALUES ('demo_reset', %s)",
                            (Jsonb({"by": user}),))
     return {"status": "reset"}

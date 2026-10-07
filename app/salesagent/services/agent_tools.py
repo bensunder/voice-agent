@@ -101,32 +101,38 @@ async def get_lead_context(c: Container, ctx: Ctx) -> dict[str, Any]:
     }
 
 
+async def persist_answers(conn: Any, c: Container, attempt_id: uuid.UUID, update: SlotUpdate) -> tuple[Any, Any]:
+    """Upsert slots and recompute the deterministic score + valuation (no audit)."""
+    for name, sv in update.slots.items():
+        await conn.execute(
+            """INSERT INTO qualification_slot (attempt_id, name, value, confidence, evidence)
+               VALUES (%s,%s,%s,%s,%s)
+               ON CONFLICT (attempt_id, name) DO UPDATE SET value=EXCLUDED.value,
+                 confidence=EXCLUDED.confidence, evidence=EXCLUDED.evidence, updated_at=now()""",
+            (attempt_id, name, Jsonb(sv.value), sv.confidence, sv.evidence),
+        )
+    slots = await _slots(conn, attempt_id)
+    result = score(slots, min_lines=c.price_book.min_lines)
+    valuation = value_opportunity(slots, c.price_book)
+    val_json = valuation.__dict__ if valuation else None
+    await conn.execute(
+        """INSERT INTO score_result (attempt_id, score, band, reason_codes, missing, verify,
+                                     rubric_version, valuation, recommended_action)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+           ON CONFLICT (attempt_id) DO UPDATE SET score=EXCLUDED.score, band=EXCLUDED.band,
+             reason_codes=EXCLUDED.reason_codes, missing=EXCLUDED.missing, verify=EXCLUDED.verify,
+             rubric_version=EXCLUDED.rubric_version, valuation=EXCLUDED.valuation,
+             recommended_action=EXCLUDED.recommended_action, updated_at=now()""",
+        (attempt_id, result.score, result.band.value, result.reason_codes, result.missing,
+         result.verify, result.rubric_version, Jsonb(val_json) if val_json else None,
+         result.recommended_action),
+    )
+    return result, valuation
+
+
 async def save_answers(c: Container, ctx: Ctx, update: SlotUpdate) -> dict[str, Any]:
     async with c.pool.connection() as conn, conn.transaction():
-        for name, sv in update.slots.items():
-            await conn.execute(
-                """INSERT INTO qualification_slot (attempt_id, name, value, confidence, evidence)
-                   VALUES (%s,%s,%s,%s,%s)
-                   ON CONFLICT (attempt_id, name) DO UPDATE SET value=EXCLUDED.value,
-                     confidence=EXCLUDED.confidence, evidence=EXCLUDED.evidence, updated_at=now()""",
-                (ctx.attempt_id, name, Jsonb(sv.value), sv.confidence, sv.evidence),
-            )
-        slots = await _slots(conn, ctx.attempt_id)
-        result = score(slots, min_lines=c.price_book.min_lines)
-        valuation = value_opportunity(slots, c.price_book)
-        val_json = valuation.__dict__ if valuation else None
-        await conn.execute(
-            """INSERT INTO score_result (attempt_id, score, band, reason_codes, missing, verify,
-                                         rubric_version, valuation, recommended_action)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-               ON CONFLICT (attempt_id) DO UPDATE SET score=EXCLUDED.score, band=EXCLUDED.band,
-                 reason_codes=EXCLUDED.reason_codes, missing=EXCLUDED.missing, verify=EXCLUDED.verify,
-                 rubric_version=EXCLUDED.rubric_version, valuation=EXCLUDED.valuation,
-                 recommended_action=EXCLUDED.recommended_action, updated_at=now()""",
-            (ctx.attempt_id, result.score, result.band.value, result.reason_codes, result.missing,
-             result.verify, result.rubric_version, Jsonb(val_json) if val_json else None,
-             result.recommended_action),
-        )
+        result, valuation = await persist_answers(conn, c, ctx.attempt_id, update)
         await audit(conn, "answers_saved", lead_id=ctx.lead_id, attempt_id=ctx.attempt_id,
                     detail={"slots": {k: v.value for k, v in update.slots.items()},
                             "score": result.score, "band": result.band.value,
